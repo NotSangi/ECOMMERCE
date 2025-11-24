@@ -14,15 +14,14 @@ class MyAccountManager(BaseUserManager):
             first_name = first_name,
             last_name = last_name,
             username = username,
-            email = self.normalize_email(email),
-                 
+            email = self.normalize_email(email),  
         )
         
         user.set_password(password)
         user.save(using=self._db)
         return user
     
-    def create_superuser(self, first_name, last_name, username, email, password):
+    def create_superuser(self, first_name, last_name, username, email,password):
         user = self.create_user(
             first_name=first_name,
             last_name=last_name,

@@ -37,6 +37,13 @@
                       <a
                         href="{{ item.product.get_url }}"
                         class="title">{{item.product.product_name}}</a>
+                      <p class="text-muted small">
+                      {%if item.variations.all%}
+                        {%for i in item.variations.all%}
+                          {{i.variation_category | capfirst}} : {{i.variation_value | capfirst}} <br>
+                        {%endfor%}
+                      {% endif %}
+                      </p>
                     </figcaption>
                   </figure>
                 </td>
@@ -46,7 +53,7 @@
                     <div class="input-group input-spinner">
                       <div class="input-group-prepend">
                         <a
-                          href="{% url 'remove_cart' item.product.id %}"
+                          href="{% url 'remove_cart' item.product.id item.id%}"
                           class="btn btn-light"
                           type="button"
                           id="button-plus">
@@ -58,13 +65,18 @@
                         class="form-control"
                         value="{{ item.quantity}}" />
                       <div class="input-group-append">
-                        <a
-                          href="{% url 'add_cart' item.product.id %}"
-                          class="btn btn-light"
-                          type="button"
-                          id="button-minus">
-                          <i class="fa fa-plus"></i>
-                        </a>
+                        <form action="{% url 'add_cart' item.product.id %}" method="POST">
+                          {%csrf_token%}
+                          {%for i in item.variations.all%}
+                            <input type="hidden" name="{{i.variation_category | lower}}" value="{{i.variation_value | capfirst}}">
+                          {%endfor%}
+                          <button
+                            type="submit"
+                            class="btn btn-light"
+                            id="button-minus">
+                            <i class="fa fa-plus"></i>
+                          </button>
+                        </form>
                       </div>
                     </div>
                     <!-- input-group.// -->
@@ -81,7 +93,7 @@
                 </td>
                 <td class="text-right">
                   <a
-                    href="{% url 'remove_cart_item' item.product.id %}"
+                    href="{% url 'remove_cart_item' item.product.id item.id%}"
                     class="btn btn-danger">
                     Remove</a>
                 </td>
