@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'orders',
     'carts',
     'store',
     'accounts',
@@ -68,7 +69,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'category.context_processors.menu_links',
-                'carts.context_processors.counter'
+                'carts.context_processors.counter',
+                'orders.context_processors.paypal_settings'
             ],
         },
     },

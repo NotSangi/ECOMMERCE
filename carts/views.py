@@ -3,6 +3,7 @@ from store.models import Product, Variation
 from .models import Cart, CartItem
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
+from orders.forms import OrderForm
 
 # Create your views here.
 
@@ -154,6 +155,7 @@ def cart(request, total=0, quantity=0, cart_items=None):
 # ----- END CART LOGIC ----- #
 @login_required(login_url='login')
 def checkout(request, total=0, quantity=0, cart_items=None):
+    form = OrderForm()
     tax=0
     grand_total=0
     try:
@@ -165,7 +167,7 @@ def checkout(request, total=0, quantity=0, cart_items=None):
         for cart_item in cart_items:
             total += cart_item.product.price * cart_item.quantity
             quantity += cart_item.quantity
-        tax = 0.02*total
+        tax = round((0.02*total), 2)
         grand_total = total + tax
     except ObjectDoesNotExist:
         pass
@@ -175,7 +177,8 @@ def checkout(request, total=0, quantity=0, cart_items=None):
         'quantity': quantity,
         'cart_items': cart_items,
         'tax': tax,
-        'grand_total': grand_total
+        'grand_total': grand_total,
+        'form': form
     }
     
     return render(request, 'store/checkout.html', context)
