@@ -9,7 +9,6 @@ window.paypal
     message: {
       amount: 100,
     },
-
     async createOrder() {
       try {
         const response = await fetch("/api/orders", {
@@ -75,20 +74,9 @@ window.paypal
           throw new Error(JSON.stringify(orderData));
         } else {
           // (3) Successful transaction -> Show confirmation or thank you message
-          // Or go to another URL:  actions.redirect('thank_you.html');
-          const transaction =
-            orderData?.purchase_units?.[0]?.payments?.captures?.[0] ||
-            orderData?.purchase_units?.[0]?.payments?.authorizations?.[0];
-          resultMessage(
-            `Transaction ${transaction.status}: ${transaction.id}<br>
-          <br>See console for all available details`
-          );
-          console.log(
-            "Capture result",
-            orderData,
-            JSON.stringify(orderData, null, 2)
-          );
-        }
+          // Or go to another URL:  
+          window.location.href = '/order_complete/?order_number='+ orderData.order_number+'&payment_id='+ orderData.payment_id;
+        } 
       } catch (error) {
         console.error(error);
         resultMessage(

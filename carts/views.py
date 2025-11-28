@@ -155,7 +155,7 @@ def cart(request, total=0, quantity=0, cart_items=None):
 # ----- END CART LOGIC ----- #
 @login_required(login_url='login')
 def checkout(request, total=0, quantity=0, cart_items=None):
-    form = OrderForm()
+    form = OrderForm(user=request.user)
     tax=0
     grand_total=0
     try:

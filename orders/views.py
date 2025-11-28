@@ -1,10 +1,16 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from carts.models import CartItem
-from .models import Order
+from .models import Order, Payment, OrderProduct
 from .forms import OrderForm
+from store.models import Product
 from django.shortcuts import get_object_or_404
 import datetime
+
+#MAIL
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+
 
 #PAYPAL
 import os
@@ -109,7 +115,6 @@ paypal_client: PaypalServersdkClient = PaypalServersdkClient(
 
 orders_controller: OrdersController = paypal_client.orders
 
-
 @csrf_exempt 
 def create_paypal_order(request):
     if request.method == 'POST':
@@ -154,16 +159,79 @@ def create_paypal_order(request):
 
 @csrf_exempt
 def capture_paypal_order(request, order_id):
-    """
-    Captura el pago de la orden de PayPal. Corresponde a /api/orders/<order_id>/capture
-    """
     if request.method == 'POST':
         try:
-            order = orders_controller.capture_order(
+            paypal_order = orders_controller.capture_order(
                 {"id": order_id, "prefer": "return=representation"}
             )
+            
+            paypal_order_data = paypal_order.body
+            details = paypal_order_data.purchase_units[0].payments.captures[0]
+            transaction_id = details.id
+            amount_captured = details.amount.value
+            order_number = paypal_order_data.purchase_units[0].custom_id
 
-            return JsonResponse(json.loads(ApiHelper.json_serialize(order.body)), status=200)
+            order = get_object_or_404(Order, 
+                user=request.user, 
+                order_number=order_number, 
+                is_ordered=False)
+            
+            payment = Payment.objects.create(
+                user=request.user,
+                payment_id=transaction_id,
+                payment_method='PayPal',
+                amount_id=amount_captured,
+                status=details.status,
+            )
+            
+            order.payment = payment
+            order.is_ordered = True
+            order.status = 'accepted' 
+            order.save()
+            
+            cart_items = CartItem.objects.filter(user=request.user)
+            
+            for item in cart_items:
+                order_product = OrderProduct.objects.create(
+                    order=order,
+                    payment=payment,
+                    user=request.user,
+                    product=item.product,
+                    quantity=item.quantity,
+                    product_price=item.product.price, 
+                    ordered=True
+                )
+                
+                product = Product.objects.get(id=item.product.id)
+                product.stock -= item.quantity
+                product.save()
+                
+            cart_variations = item.variations.all()
+            order_product.variations.set(cart_variations)
+            cart_items.delete()
+            
+            mail_subject = 'Thank you for your purchase'
+            body = render_to_string('orders/order_received_email.html', {
+                'user': request.user,
+                'order': order,
+            })
+            
+            to_email = order.email
+            send_email = EmailMessage(mail_subject, body, to=[to_email])
+            send_email.send()
+            
+            if 'order_number' in request.session:
+                del request.session['order_number']
+            
+            paypal_body_dict = json.loads(ApiHelper.json_serialize(paypal_order.body))
+            data = {
+                'order_number':order.order_number,
+                'payment_id': payment.payment_id
+            }
+            
+            paypal_body_dict.update(data)
+            
+            return JsonResponse(paypal_body_dict, status=200)
 
         except ErrorException as e:
             return JsonResponse({"error": "PayPal API Error", "details": str(e.message)}, status=e.status_code)
@@ -173,3 +241,31 @@ def capture_paypal_order(request, order_id):
     return HttpResponse(status=405)
     
 # ----- END PAYPAL API ----- #
+
+def order_complete(request):
+    order_number = request.GET.get('order_number')
+    payment_id = request.GET.get('payment_id')
+    
+    try:
+        order = Order.objects.get(order_number=order_number, is_ordered=True)
+        ordered_products = OrderProduct.objects.filter(order__id=order.id)
+        
+        subtotal = 0
+        for i in ordered_products:
+            subtotal += i.product_price * i.quantity
+            
+        payment = Payment.objects.get(payment_id=payment_id)
+        
+        context = {
+            'order': order,
+            'ordered_products': ordered_products,
+            'order_number': order.order_number,
+            'payment_id': payment.payment_id,
+            'payment': payment,
+            'subtotal': subtotal
+        }
+        
+        return render(request, 'orders/order_complete.html', context)
+    except(Payment.DoesNotExist, Order.DoesNotExist):
+        return redirect('home')
+    
