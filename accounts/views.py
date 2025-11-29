@@ -5,6 +5,8 @@ from django.db import transaction
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
 import requests
+from orders.models import Order
+from django.core.paginator import Paginator
 
 # EMAIL IMPORTS
 from django.contrib.sites.shortcuts import get_current_site
@@ -159,8 +161,24 @@ def activate(request, uidb64, token):
 # ----- USER DASHBOARD ----- #
 @login_required(login_url='login')
 def dashboard(request):
-    return render(request, 'accounts/dashboard.html')
+    orders = Order.objects.order_by('-created_at').filter(user_id=request.user, is_ordered=True)
+    orders_count = orders.count()
+    context = {
+        'orders_count': orders_count,
+    }
+    
+    return render(request, 'accounts/dashboard.html', context)
 
+def my_orders(request):
+    orders = Order.objects.filter(user=request.user, is_ordered=True).order_by('-created_at')
+    paginator = Paginator(orders, 5)
+    page = request.GET.get('page')
+    paged_orders = paginator.get_page(page)
+    context = {
+        'orders': paged_orders,
+    }
+    
+    return render(request, 'accounts/my_orders.html', context)
 # -------------------------- #
 
 # ----- START RESET PASSWORD ----- #
