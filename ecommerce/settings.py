@@ -29,7 +29,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG_STR = os.getenv('DEBUG', 'False')
 DEBUG = DEBUG_STR.lower() == 'true'
 
-ALLOWED_HOSTS = ["http://ecommerce-env.eba-ygheianz.us-east-1.elasticbeanstalk.com/"]
+ALLOWED_HOSTS = ["http://django-env.eba-demywt3c.us-west-2.elasticbeanstalk.com/"]
 
 # Application definition
 
