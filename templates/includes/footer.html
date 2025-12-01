@@ -18,3 +18,13 @@
 	</div><!-- //container -->
 </footer>
 <!-- ========================= FOOTER END // ========================= -->
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script type="text/javascript">
+	$(document).ready(function(){
+		$('.thumb a').click(function(e){
+			e.preventDefault();
+			$('.main_image img').attr('src', $(this).attr('href'))
+		})
+	})
+</script>
