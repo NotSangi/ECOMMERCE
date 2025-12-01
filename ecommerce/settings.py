@@ -26,9 +26,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG_STR = os.getenv('DEBUG', 'False')
+DEBUG = DEBUG_STR.lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["http://ecommerce-env.eba-ygheianz.us-east-1.elasticbeanstalk.com/"]
 
 # Application definition
 
@@ -54,7 +55,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_session_timeout.middleware.SessionTimeoutMiddleware',
 ]
+
+SESSION_EXPIRE_SECONDS = 3600
+SESSION_EXPIRE_AFTER_LAST_ACTIVITY = True
+SESSION_TIMEOUT_REDIRECT = '/accounts/login'
 
 ROOT_URLCONF = 'ecommerce.urls'
 
@@ -140,13 +146,15 @@ MESSAGE_TAGS = {
     messages.ERROR : 'danger',
 }
 
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-EMAIL_USE_TLS = True
+EMAIL_USE_TLS_STR = os.getenv('EMAIL_HOST_PASSWORD', 'False')
+EMAIL_USE_TLS = EMAIL_USE_TLS_STR.lower() == 'true'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+ADMIN_HONEYPOT_URL = os.getenv('ADMIN_HONEYPOT_URL')

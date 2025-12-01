@@ -44,6 +44,11 @@ def register(request):
             user.phone_number = phone_number
             user.save()
             
+            profile = UserProfile()
+            profile.user = user
+            profile.profile_picture = 'default/default_user.png'
+            profile.save()
+            
             current_site = get_current_site(request)
             mail_subject = 'Activate your account in NotSangi Page'
             body = render_to_string('accounts/account_verification_email.html', {
@@ -113,7 +118,7 @@ def login(request):
                             user_map[key] = a
 
             auth.login(request, user)
-            messages.success(request, 'Has iniciado sesión correctamente.')
+            messages.success(request, 'You have successfully loggued in')
             url = request.META.get('HTTP_REFERER')
             try:
                 query = requests.utils.urlparse(url).query
@@ -201,6 +206,29 @@ def edit_profile(request):
     }
     
     return render(request, 'accounts/edit_profile.html', context)
+
+@login_required(login_url='login')
+def change_password(request):
+    if request.method == "POST":
+        current_password = request.POST['current_password']
+        new_password = request.POST['new_password']
+        confirm_password = request.POST['confirm_password']
+        
+        user = Account.objects.get(username__exact=request.user.username)
+        if new_password == confirm_password:
+            success = user.check_password(current_password)
+            if success:
+                user.set_password(new_password)
+                user.save()
+                messages.success(request, 'Password has been successfully updated')
+                return redirect('change_password')
+            else:
+                messages.error(request, 'Current password dont match')
+                return redirect('change_password')
+        else:
+            messages.error(request, 'The new passwords dont match')
+            return redirect('change_password')
+    return  render(request, 'accounts/change_password.html')
      
 # -------------------------- #
 

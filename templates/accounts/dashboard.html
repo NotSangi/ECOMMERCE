@@ -27,7 +27,11 @@
 				<div class="col-md-6">
 					<div class="card" style="text-align: center;">
 						<div class="card-body">
-							<img src="https://www.w3schools.com/w3images/avatar2.png" alt="profile-image" width="50" height="50" style="border-radius:50%;">
+							{%if user.userprofile.has_profile_picture%}
+								<img src="{{user.userprofile.profile_picture.url}}" alt="profile-image" width="50" height="50" style="border-radius:50%;">
+							{%else%}
+								<img src="/media/default/default_user.png" alt="profile-image" width="50" height="50" style="border-radius:50%;">
+							{%endif%}
 							<p class="mb-0">{{user.email}}</p>
 							<p class="mb-0">{{user.phone_number}}</p>
 						</div>
